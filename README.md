@@ -92,18 +92,6 @@ Based on the analysis, the following strategic actions are recommended:
 
 ---
 
-## 🎓 Skills Demonstrated
-
-- ✅ Advanced SQL querying and optimization
-- ✅ Customer segmentation and cohort analysis
-- ✅ Product performance analysis
-- ✅ Operational metrics evaluation
-- ✅ Data quality assessment and handling
-- ✅ Business insight generation from raw data
-- ✅ Strategic thinking and recommendation development
-
----
-
 ## 📧 Contact
 
 For questions or collaboration opportunities, feel free to reach out!
