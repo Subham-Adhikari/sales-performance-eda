@@ -96,8 +96,8 @@ Based on the analysis, the following strategic actions are recommended:
 
 For questions or collaboration opportunities, feel free to reach out!
 
-- 🔗 LinkedIn: [Your LinkedIn Profile](https://www.linkedin.com/in/subhamad/)
-- 📧 Email: subhamadhikari348@gmail.com
+- 🔗 [LinkedIn Profile](https://www.linkedin.com/in/subhamad/)
+- 📧 [Email](subhamadhikari348@gmail.com)
 
 ---
 
