@@ -75,3 +75,35 @@ FROM
 GO
 
 
+
+/* 
+	% of orders shipped on/before due_date = ?, exclude orderdate, shippingdate and due date with
+	no values.
+
+
+
+	% on-time = (On-time orders / Valid orders) × 100 --VALID ORDER MEANS ORDER WHICH IS
+														DELIVERED, WHETHER LATE OR ON-TIME
+	          = (2 / 3) × 100 
+			  = 66.67%
+
+*/
+-- ANS: 100
+SELECT
+	CAST(onTime_orders AS float) / all_orders * 100
+FROM
+(
+	SELECT
+		COUNT(DISTINCT order_number) AS onTime_orders,
+		(SELECT 
+			COUNT(DISTINCT order_number) 
+		 FROM gold.fact_sales 
+		 WHERE order_date IS NOT NULL AND 
+		       shipping_date IS NOT NULL AND 
+			   due_date IS NOT NULL) AS all_orders
+	FROM gold.fact_sales
+	WHERE (order_date IS NOT NULL AND shipping_date IS NOT NULL AND due_date IS NOT NULL)
+		  AND
+		  shipping_date <= due_date -- ON TIME ORDERS
+)T;
+GO
