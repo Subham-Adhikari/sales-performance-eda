@@ -92,34 +92,6 @@ Based on the analysis, the following strategic actions are recommended:
 
 ---
 
-## 📁 Project Structure
-
-```
-sales-performance-analysis/
-│
-├── queries/
-│   ├── data_quality_check.sql
-│   ├── customer_segmentation.sql
-│   ├── product_performance.sql
-│   └── shipping_analysis.sql
-│
-├── results/
-│   └── analysis_findings.md
-│
-└── README.md
-```
-
----
-
-## 🚀 How to Use
-
-1. Clone this repository
-2. Import the SQL queries from the `queries/` folder into Microsoft SQL Server
-3. Execute queries sequentially to reproduce the analysis
-4. Review findings in `results/analysis_findings.md`
-
----
-
 ## 🎓 Skills Demonstrated
 
 - ✅ Advanced SQL querying and optimization
