@@ -107,3 +107,113 @@ FROM
 		  shipping_date <= due_date -- ON TIME ORDERS
 )T;
 GO
+
+
+
+/*
+
+What are our top 10 customers by revenue, and what percentage of total revenue do 
+they represent? (Customer concentration risk)
+-> ANS: ~0.45%
+*/
+
+WITH topTen_customers AS 
+(
+	SELECT TOP (10) WITH TIES
+		customer_key,
+		SUM(sales_amount) sales_amount,
+		SUM(SUM(sales_amount)) OVER() global_sales_amount
+	FROM gold.fact_sales
+	GROUP BY customer_key
+	ORDER BY sales_amount DESC
+)
+
+SELECT
+	ROUND(CAST(SUM(sales_amount) AS float) / MAX(global_sales_amount) * 100, 2)
+FROM topTen_customers;
+GO
+
+
+/*
+Which product categories generate the most profit margin? (Cost vs Sales analysis)
+***PROFIT = REVENUE - COST
+***IF PROFIT MARGIN: ((Revenue − Cost) / Revenue) × 100
+***GROSS PROFIT = REVENUE - COGS
+***IF GROSS PROFIT MARGIN: (Revenue − Cost of Goods Sold) / Revenue × 100
+remember,
+	when i am talking about profit or profit %, then always divided it with cost price.
+	and 
+	when i am talking about profit margin %, then always divided it with revenue.
+
+-> ANS: ACCESSORIES, PROFIT MARGIN % [~62.78%]
+*/
+
+SELECT TOP (1)
+	P.category,
+	SUM(P.cost) cost,
+	SUM(F.sales_amount) sales_amount,
+	SUM(F.sales_amount) - SUM(P.cost) profit,
+	ROUND(
+		CAST((SUM(F.sales_amount) - SUM(P.cost)) AS float) / SUM(F.sales_amount) * 100
+		, 2) profitMargin_perc
+FROM gold.fact_sales F
+INNER JOIN gold.dim_products P
+ON F.product_key = P.product_key
+GROUP BY P.category
+ORDER BY profitMargin_perc DESC;
+GO
+
+
+
+/*
+What's our month-over-month revenue growth rate? (Business growth tracking)
+for each month of each year.
+-> ANS: AVERAGE REVENUE GROWTH RATE IS ~29%
+*/
+
+WITH initial_table AS
+(
+	SELECT
+		YEAR(order_date) order_year,
+		MONTH(order_date) order_month,
+		FORMAT(order_date, 'MMM-yy') order_monthYear,
+		SUM(sales_amount) current_sales_amount,
+		LAG(SUM(sales_amount)) 
+			OVER(ORDER BY YEAR(order_date) ASC, MONTH(order_date) ASC) 
+				AS previous_sales_amount
+	FROM gold.fact_sales
+	WHERE order_date IS NOT NULL
+	GROUP BY 
+		YEAR(order_date),
+		MONTH(order_date) ,
+		FORMAT(order_date, 'MMM-yy')
+),
+mom_RevenueGrowthRate AS
+(
+	SELECT
+		order_year, order_month, order_monthYear, 
+		current_sales_amount, previous_sales_amount,
+		ROUND(CAST(
+			(current_sales_amount - previous_sales_amount) AS float) / previous_sales_amount
+			 * 100, 2) percChange_vs_PM,
+		CASE
+			WHEN
+				ROUND(CAST(
+			(current_sales_amount - previous_sales_amount) AS float) / previous_sales_amount
+			 * 100, 2) > 0
+			 THEN 'increase'
+			 WHEN
+				ROUND(CAST(
+			(current_sales_amount - previous_sales_amount) AS float) / previous_sales_amount
+			 * 100, 2) < 0
+			 THEN 'decrease'
+			 ELSE 'no-change'
+		END vs_PreviousMonth
+	FROM initial_table
+)
+
+SELECT
+	ROUND(AVG(percChange_vs_PM), 0) avgRevenueGrowthRate_mom
+FROM mom_RevenueGrowthRate
+WHERE previous_sales_amount IS NOT NULL;
+GO
