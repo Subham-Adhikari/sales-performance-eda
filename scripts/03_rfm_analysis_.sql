@@ -1,3 +1,137 @@
+
+-- Updated Analysis:
+/*
+==========================================================
+Customer Recency Analysis and Segmentation
+==========================================================
+
+Objective:
+----------
+1. Calculate Recency for each customer.
+   Recency = Number of days since customer's last order.
+
+2. Segment customers into business-friendly groups
+   based on how recently they purchased.
+
+Segmentation Logic:
+-------------------
+0–30 days   → Very recent buyers
+31–90 days  → Bought somewhat recently
+91–180 days → Likely to stop buying
+181+ days   → Have not purchased for a long time
+
+Output:
+-------
+- Number of customers in each segment
+- Formatted customer counts (e.g., ~4k)
+- Percentage distribution of customers
+==========================================================
+*/
+
+-- Step 1: Calculate last purchase date per customer
+-- and determine dataset-wide most recent order date
+
+WITH recency_table AS
+(
+	SELECT
+		customer_key,
+
+		-- Last order placed by each customer
+		MAX(order_date) AS last_order_date,
+
+		-- Most recent order date in the entire dataset
+		MAX(MAX(order_date)) OVER() AS most_recent_order_date,
+
+		-- Recency calculation:
+		-- Days between customer's last order
+		-- and most recent order in dataset
+		DATEDIFF(
+			DAY,
+			MAX(order_date),
+			MAX(MAX(order_date)) OVER()
+		) AS recency_days
+
+	FROM gold.fact_sales
+
+	-- Group by customer to calculate metrics per customer
+	GROUP BY customer_key
+),
+
+-- Step 2: Assign business-friendly recency segments
+
+recency_segment AS
+(
+	SELECT
+		*,
+
+		-- Segment customers based on recency_days
+		CASE 
+			WHEN recency_days <= 30 
+				THEN 'Very recent buyers'
+
+			WHEN recency_days <= 90 
+				THEN 'Bought somewhat recently'
+
+			WHEN recency_days <= 180 
+				THEN 'Likely to stop buying'
+
+			ELSE 
+				'Have not purchased for a long time'
+
+		END AS recency_segment
+
+	FROM recency_table
+)
+
+-- Step 3: Aggregate customers by segment
+-- and calculate counts and percentages
+
+SELECT
+	recency_segment,
+
+	-- Total number of customers in each segment
+	COUNT(1) AS customer_number,
+
+	-- Format large numbers into readable form (~4k)
+	CASE 
+		WHEN COUNT(1) >= 1000 
+		     AND COUNT(1) < 1000000 
+
+			THEN '~' + CAST(
+				ROUND(
+					CAST(COUNT(1) AS float) / 1000,
+					2
+				) AS varchar(20)
+			) + 'k'
+
+		ELSE 
+			CAST(COUNT(1) AS varchar(20))
+
+	END AS number_of_customers,
+
+	-- Percentage share of each segment
+	-- relative to total customers
+	'~' + CAST(
+		ROUND(
+			CAST(COUNT(1) AS float)
+			/
+			SUM(COUNT(1)) OVER()
+			* 100,
+			0
+		) AS varchar(20)
+	) + '%' AS perc_of_customers
+
+FROM recency_segment
+
+-- Group results by segment label
+GROUP BY recency_segment;
+
+GO
+
+
+
+
+
 /*
 	1. For each customer, calculate their total number of distinct orders (Frequency) and 
 	total revenue spent (Monetary).
